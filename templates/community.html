@@ -1,0 +1,270 @@
+{% extends "layout.html" %}
+
+{% block title %}社区 - Smart To-Do{% endblock %}
+
+{% block content %}
+<h1 class="mb-4"><i class="bi bi-people"></i> 社区分享</h1>
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card mb-3">
+            <div class="card-body">
+                <h5 class="card-title">发布新帖子</h5>
+                <form method="POST" action="{{ url_for('create_post') }}">
+                    <div class="mb-3">
+                        <textarea class="form-control" name="content" rows="3" placeholder="分享你的想法..."></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <small class="text-muted">如需插入图片，请在正文中使用 [图片URL] 格式，例如 [https://example.com/image.jpg]</small>
+                    </div>
+                    <button type="submit" class="btn btn-primary">发布</button>
+                </form>
+            </div>
+        </div>
+
+        <h5 class="mb-3">最新帖子</h5>
+        {% if posts %}
+        {% for post in posts %}
+        <div class="card mb-3">
+            <div class="card-body">
+                <div class="d-flex align-items-center mb-2">
+                    <a href="{{ url_for('profile', user_id=post.user_id) }}">
+                        <img src="{{ post.user_avatar or url_for('static', filename='images/default-avatar.png') }}" alt="头像" class="rounded-circle me-2" width="40" height="40" onerror="this.onerror=null; this.src='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg=='">
+                    </a>
+                    <div>
+                        <a href="{{ url_for('profile', user_id=post.user_id) }}" class="text-decoration-none text-dark">
+                            <strong>{{ post.user_name }}</strong>
+                        </a>
+                        <small class="text-muted"> · {{ post.created_at|time_ago }}</small>
+                    </div>
+                </div>
+                <div class="card-text">{{ post.content | post_content | safe }}</div>
+                {% if post.images %}
+                <div class="row g-2 mb-2">
+                    {% for img in post.images %}
+                    <div class="col-4">
+                        <img src="{{ img }}" class="img-fluid rounded" alt="图片">
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <form method="POST" action="{{ url_for('toggle_like', post_id=post.id) }}" style="display:inline;" class="like-form" data-post-id="{{ post.id }}">
+                            <button type="submit" class="btn btn-sm btn-outline-{% if session.user_id in post.likes %}danger{% else %}secondary{% endif %}">
+                                <i class="bi bi-heart{% if session.user_id in post.likes %}-fill{% endif %}"></i> <span class="like-count">{{ post.likes|length }}</span> 赞
+                            </button>
+                        </form>
+                        <button class="btn btn-sm btn-outline-secondary" data-bs-toggle="collapse" data-bs-target="#comments-{{ post.id }}"><i class="bi bi-chat"></i> 评论 ({{ post.comments|length }})</button>
+                    </div>
+                    <div>
+                        {% if session.user_id == post.user_id %}
+                        <a href="{{ url_for('edit_post', post_id=post.id) }}" class="btn btn-sm btn-outline-warning"><i class="bi bi-pencil"></i> 编辑</a>
+                        <form method="POST" action="{{ url_for('delete_post', post_id=post.id) }}" style="display:inline;" onsubmit="return confirm('确定删除？');">
+                            <button type="submit" class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i> 删除</button>
+                        </form>
+                        {% endif %}
+                        <button class="btn btn-sm btn-outline-primary">分享</button>
+                    </div>
+                </div>
+                <div class="collapse mt-3" id="comments-{{ post.id }}">
+                    <div class="card card-body">
+                        <h6>评论</h6>
+                        {% if post.comments %}
+                        <ul class="list-unstyled">
+                            {% for comment in post.comments %}
+                            <li class="mb-2 comment-item" data-comment-id="{{ comment.id }}" data-post-id="{{ post.id }}">
+                                <div class="d-flex justify-content-between">
+                                    <div>
+                                        <strong>{{ comment.user_name or '用户' }}</strong>: {{ comment.content }}
+                                        <small class="text-muted">{{ comment.created_at|time_ago }}</small>
+                                    </div>
+                                    <div class="comment-actions">
+                                        <form method="POST" action="{{ url_for('toggle_comment_like', post_id=post.id, comment_id=comment.id) }}" class="d-inline comment-like-form">
+                                            <button type="submit" class="btn btn-sm btn-outline-{% if session.user_id in comment.likes %}danger{% else %}secondary{% endif %}">
+                                                <i class="bi bi-heart{% if session.user_id in comment.likes %}-fill{% endif %}"></i> <span class="comment-like-count">{{ comment.likes|length }}</span>
+                                            </button>
+                                        </form>
+                                        {% if session.user_id == comment.user_id or session.user_id == post.user_id %}
+                                        <form method="POST" action="{{ url_for('delete_comment', post_id=post.id, comment_id=comment.id) }}" class="d-inline comment-delete-form">
+                                            <button type="submit" class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></button>
+                                        </form>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </li>
+                            {% endfor %}
+                        </ul>
+                        {% else %}
+                        <p class="text-muted">暂无评论</p>
+                        {% endif %}
+                        <form method="POST" action="{{ url_for('add_comment', post_id=post.id) }}">
+                            <div class="input-group">
+                                <input type="text" class="form-control" name="content" placeholder="写下你的评论..." required>
+                                <button class="btn btn-primary" type="submit">发送</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+        {% else %}
+        <div class="alert alert-info">
+            还没有帖子，赶快发布第一条吧！
+        </div>
+        {% endif %}
+    </div>
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">热门用户</h5>
+            </div>
+            <div class="card-body">
+                <ul class="list-group list-group-flush">
+                    {% for user in hot_users %}
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        <a href="{{ url_for('profile', user_id=user.id) }}">{{ user.nickname }}</a>
+                        <span class="badge bg-primary rounded-pill">{{ user.followers }} 粉丝</span>
+                    </li>
+                    {% else %}
+                    <li class="list-group-item text-muted">暂无数据</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+        <div class="card mt-3">
+            <div class="card-header">
+                <h5 class="mb-0">社区规则</h5>
+            </div>
+            <div class="card-body">
+                <ul class="small">
+                    <li>请尊重他人，禁止恶意攻击。</li>
+                    <li>禁止发布广告、色情、暴力内容。</li>
+                    <li>鼓励分享与任务管理相关的经验。</li>
+                    <li>发现违规内容请举报。</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // 帖子点赞表单AJAX处理
+    document.querySelectorAll('form.like-form').forEach(form => {
+        form.addEventListener('submit', function(event) {
+            event.preventDefault();
+            const postId = this.dataset.postId;
+            const formData = new FormData(this);
+            const button = this.querySelector('button');
+            const icon = button.querySelector('i');
+            const countSpan = button.querySelector('.like-count');
+            fetch(this.action, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                // 更新点赞数量
+                countSpan.textContent = data.likes_count;
+                // 更新按钮样式
+                if (data.liked) {
+                    button.classList.remove('btn-outline-secondary');
+                    button.classList.add('btn-outline-danger');
+                    icon.classList.remove('bi-heart');
+                    icon.classList.add('bi-heart-fill');
+                } else {
+                    button.classList.remove('btn-outline-danger');
+                    button.classList.add('btn-outline-secondary');
+                    icon.classList.remove('bi-heart-fill');
+                    icon.classList.add('bi-heart');
+                }
+            })
+            .catch(error => console.error('Error:', error));
+        });
+    });
+
+    // 评论点赞表单AJAX处理
+    document.querySelectorAll('form.comment-like-form').forEach(form => {
+        form.addEventListener('submit', function(event) {
+            event.preventDefault();
+            const formData = new FormData(this);
+            const button = this.querySelector('button');
+            const icon = button.querySelector('i');
+            const countSpan = button.querySelector('.comment-like-count');
+            fetch(this.action, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    alert(data.error);
+                    return;
+                }
+                // 更新点赞数量
+                countSpan.textContent = data.likes_count;
+                // 更新按钮样式
+                if (data.liked) {
+                    button.classList.remove('btn-outline-secondary');
+                    button.classList.add('btn-outline-danger');
+                    icon.classList.remove('bi-heart');
+                    icon.classList.add('bi-heart-fill');
+                } else {
+                    button.classList.remove('btn-outline-danger');
+                    button.classList.add('btn-outline-secondary');
+                    icon.classList.remove('bi-heart-fill');
+                    icon.classList.add('bi-heart');
+                }
+            })
+            .catch(error => console.error('Error:', error));
+        });
+    });
+
+    // 评论删除表单AJAX处理
+    document.querySelectorAll('form.comment-delete-form').forEach(form => {
+        form.addEventListener('submit', function(event) {
+            event.preventDefault();
+            if (!confirm('确定删除这条评论吗？')) {
+                return;
+            }
+            const formData = new FormData(this);
+            const listItem = this.closest('.comment-item');
+            fetch(this.action, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // 移除评论条目
+                    listItem.remove();
+                    // 更新评论数量显示（可选）
+                    const commentCountElem = document.querySelector(`button[data-bs-target="#comments-${listItem.dataset.postId}"]`);
+                    if (commentCountElem) {
+                        const text = commentCountElem.textContent;
+                        const match = text.match(/评论\s*\((\d+)\)/);
+                        if (match) {
+                            const newCount = parseInt(match[1]) - 1;
+                            commentCountElem.textContent = `评论 (${newCount})`;
+                        }
+                    }
+                } else {
+                    alert(data.error || '删除失败');
+                }
+            })
+            .catch(error => console.error('Error:', error));
+        });
+    });
+});
+</script>
+{% endblock %}

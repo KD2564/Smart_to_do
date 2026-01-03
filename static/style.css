@@ -1,0 +1,117 @@
+/* Custom styles for Smart To-Do */
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #f8f9fa;
+}
+
+.navbar-brand {
+    font-weight: bold;
+    font-size: 1.5rem;
+}
+
+.card {
+    border-radius: 10px;
+    border: none;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+
+.card-header {
+    border-radius: 10px 10px 0 0 !important;
+}
+
+.btn-primary {
+    background-color: #4361ee;
+    border-color: #4361ee;
+}
+
+.btn-primary:hover {
+    background-color: #3a56d4;
+    border-color: #3a56d4;
+}
+
+.btn-success {
+    background-color: #06d6a0;
+    border-color: #06d6a0;
+}
+
+.btn-warning {
+    background-color: #ffd166;
+    border-color: #ffd166;
+}
+
+.alert {
+    border-radius: 10px;
+}
+
+.progress {
+    border-radius: 10px;
+}
+
+.table th {
+    border-top: none;
+}
+
+.footer {
+    margin-top: 3rem;
+}
+
+/* Task status badges */
+.badge.bg-secondary {
+    background-color: #6c757d !important;
+}
+
+.badge.bg-warning {
+    background-color: #ffc107 !important;
+    color: #212529;
+}
+
+.badge.bg-success {
+    background-color: #28a745 !important;
+}
+
+/* Calendar dot */
+.calendar-dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background-color: #4361ee;
+    margin-left: 2px;
+}
+
+/* Message bubble */
+.message-bubble {
+    border-radius: 18px;
+    padding: 10px 15px;
+    margin-bottom: 10px;
+    max-width: 70%;
+}
+
+.message-sent {
+    background-color: #4361ee;
+    color: white;
+    margin-left: auto;
+}
+
+.message-received {
+    background-color: #e9ecef;
+    color: #212529;
+}
+
+/* Profile avatar */
+.profile-avatar {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 5px solid white;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+
+/* Stats chart */
+.chart-container {
+    position: relative;
+    height: 350px;
+    width: 100%;
+    overflow: visible;
+}

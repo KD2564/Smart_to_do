@@ -1,0 +1,180 @@
+{% extends "layout.html" %}
+
+{% block title %}管理员后台 - Smart To-Do{% endblock %}
+
+{% block content %}
+<h1 class="mb-4"><i class="bi bi-gear"></i> 管理员后台</h1>
+
+<div class="row">
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">系统设置</h5>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <h6>邮箱验证功能</h6>
+                    <p class="text-muted small">开启后，新用户注册必须验证邮箱，未验证用户功能受限。</p>
+                    <form method="POST" action="{{ url_for('toggle_email_verification') }}">
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" id="emailVerificationSwitch" {% if EMAIL_VERIFICATION_ENABLED %}checked{% endif %} onchange="this.form.submit()">
+                            <label class="form-check-label" for="emailVerificationSwitch">{% if EMAIL_VERIFICATION_ENABLED %}已开启{% else %}已关闭{% endif %}</label>
+                        </div>
+                    </form>
+                </div>
+                <div class="mb-3">
+                    <h6>DeepSeek AI 配置</h6>
+                    <p class="text-muted small">用于任务自动解析的DeepSeek API设置。</p>
+                    <form method="POST" action="{{ url_for('set_deepseek_config') }}">
+                        <div class="mb-2">
+                            <label for="deepseek_api_key" class="form-label">API密钥</label>
+                            <input type="password" class="form-control" id="deepseek_api_key" name="api_key" value="{{ deepseek_api_key or '' }}" placeholder="输入DeepSeek API密钥">
+                        </div>
+                        <div class="mb-2">
+                            <label for="deepseek_api_url" class="form-label">API URL (可选)</label>
+                            <input type="text" class="form-control" id="deepseek_api_url" name="api_url" value="{{ deepseek_api_url or 'https://api.deepseek.com/v1/chat/completions' }}" placeholder="API端点URL">
+                        </div>
+                        <div class="form-check form-switch mb-2">
+                            <input class="form-check-input" type="checkbox" id="ai_enabled_switch" name="ai_enabled" {% if deepseek_ai_enabled %}checked{% endif %}>
+                            <label class="form-check-label" for="ai_enabled_switch">启用AI任务解析</label>
+                        </div>
+                        <button type="submit" class="btn btn-primary btn-sm">保存配置</button>
+                    </form>
+                </div>
+                <div class="mb-3">
+                    <div class="alert alert-info mb-3">
+                        <h6>邮箱配置状态</h6>
+                        <p class="mb-1">服务器: {{ email_config.mail_server or '未设置' }}:{{ email_config.mail_port or '' }}</p>
+                        <p class="mb-1">发件人: {{ email_config.mail_default_sender or '未设置' }}</p>
+                        <p class="mb-1">用户名: {{ email_config.mail_username or '未设置' }}</p>
+                        <p class="mb-0">状态: {% if email_config.mail_username and email_config.mail_password %}已配置{% else %}未配置（请填写用户名和密码）{% endif %}</p>
+                    </div>
+                    <h6>邮箱SMTP配置</h6>
+                    <p class="text-muted small">用于发送验证码和测试邮件的SMTP服务器设置。</p>
+                    <form method="POST" action="{{ url_for('set_email_config') }}">
+                        <div class="mb-2">
+                            <label for="mail_server" class="form-label">SMTP服务器</label>
+                            <input type="text" class="form-control" id="mail_server" name="mail_server" value="{{ email_config.mail_server or '' }}" placeholder="例如 smtp.gmail.com">
+                        </div>
+                        <div class="mb-2">
+                            <label for="mail_port" class="form-label">SMTP端口</label>
+                            <input type="number" class="form-control" id="mail_port" name="mail_port" value="{{ email_config.mail_port or 587 }}" placeholder="587">
+                        </div>
+                        <div class="form-check form-switch mb-2">
+                            <input class="form-check-input" type="checkbox" id="mail_use_tls" name="mail_use_tls" {% if email_config.mail_use_tls %}checked{% endif %}>
+                            <label class="form-check-label" for="mail_use_tls">启用TLS</label>
+                        </div>
+                        <div class="mb-2">
+                            <label for="mail_username" class="form-label">邮箱用户名</label>
+                            <input type="text" class="form-control" id="mail_username" name="mail_username" value="{{ email_config.mail_username or '' }}" placeholder="您的邮箱地址">
+                        </div>
+                        <div class="mb-2">
+                            <label for="mail_password" class="form-label">邮箱密码/授权码</label>
+                            <input type="password" class="form-control" id="mail_password" name="mail_password" value="{{ email_config.mail_password or '' }}" placeholder="邮箱密码或授权码">
+                        </div>
+                        <div class="mb-2">
+                            <label for="mail_default_sender" class="form-label">发件人地址</label>
+                            <input type="text" class="form-control" id="mail_default_sender" name="mail_default_sender" value="{{ email_config.mail_default_sender or '' }}" placeholder="例如 noreply@smarttodo.com">
+                        </div>
+                        <button type="submit" class="btn btn-primary btn-sm">保存SMTP配置</button>
+                    </form>
+                </div>
+                <hr>
+                <div class="mb-3">
+                    <h6>系统通知</h6>
+                    <form method="POST" action="{{ url_for('admin_send_notification') }}">
+                        <div class="mb-2">
+                            <label for="notif_title" class="form-label">标题</label>
+                            <input type="text" class="form-control" id="notif_title" name="title" required>
+                        </div>
+                        <div class="mb-2">
+                            <label for="notif_content" class="form-label">内容</label>
+                            <textarea class="form-control" id="notif_content" name="content" rows="2" required></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-primary btn-sm">发送全局通知</button>
+                    </form>
+                    <form method="POST" action="{{ url_for('admin_test_email_config') }}">
+                        <button type="submit" class="btn btn-sm btn-outline-warning mt-2">发送测试邮件</button>
+                        <small class="text-muted">向您的管理员邮箱发送测试邮件以验证配置。</small>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">用户管理</h5>
+            </div>
+            <div class="card-body">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>用户名</th>
+                            <th>邮箱</th>
+                            <th>验证状态</th>
+                            <th>注册时间</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for user in users %}
+                        <tr>
+                            <td>{{ user.id }}</td>
+                            <td>{{ user.username }}</td>
+                            <td>{{ user.email }}</td>
+                            <td>
+                                {% if user.verified %}
+                                <span class="badge bg-success">已验证</span>
+                                {% else %}
+                                <span class="badge bg-warning">未验证</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ user.created_at|format_date }}</td>
+                            <td>
+                                <button class="btn btn-sm btn-outline-primary">编辑</button>
+                                <button class="btn btn-sm btn-outline-danger">封禁</button>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <div class="card mt-3">
+            <div class="card-header">
+                <h5 class="mb-0">系统统计</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3">
+                        <div class="text-center">
+                            <h3>{{ total_users }}</h3>
+                            <p class="text-muted">总用户数</p>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="text-center">
+                            <h3>{{ total_tasks }}</h3>
+                            <p class="text-muted">总任务数</p>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="text-center">
+                            <h3>{{ total_posts }}</h3>
+                            <p class="text-muted">总帖子数</p>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="text-center">
+                            <h3>{{ total_messages }}</h3>
+                            <p class="text-muted">总消息数</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

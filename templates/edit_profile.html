@@ -1,0 +1,162 @@
+{% extends "layout.html" %}
+
+{% block title %}编辑资料 - Smart To-Do{% endblock %}
+
+{% block content %}
+<h1 class="mb-4"><i class="bi bi-person-gear"></i> 编辑个人资料</h1>
+
+<form method="POST" action="{{ url_for('edit_profile') }}">
+    <div class="row">
+        <div class="col-md-6 mb-3">
+            <label for="nickname" class="form-label">昵称</label>
+            <input type="text" class="form-control" id="nickname" name="nickname" value="{{ user.nickname|default(user.username, true) }}">
+        </div>
+        <div class="col-md-6 mb-3">
+            <label for="email" class="form-label">邮箱</label>
+            <input type="email" class="form-control" id="email" name="email" value="{{ user.email }}" disabled>
+            <small class="text-muted">邮箱不可修改</small>
+            {% if EMAIL_VERIFICATION_ENABLED %}
+                <div class="mt-2">
+                    {% if user.verified %}
+                        <span class="badge bg-success">已验证</span>
+                    {% else %}
+                        <span class="badge bg-warning">未验证</span>
+                        <div class="mt-2">
+                            <button type="button" class="btn btn-sm btn-outline-primary" id="sendVerificationBtn">发送验证码</button>
+                            <div class="input-group mt-2" style="max-width: 300px;">
+                                <input type="text" class="form-control form-control-sm" id="verificationCode" placeholder="输入6位验证码">
+                                <button class="btn btn-sm btn-success" type="button" id="verifyBtn">验证</button>
+                            </div>
+                            <small class="text-muted">验证码10分钟内有效</small>
+                        </div>
+                    {% endif %}
+                </div>
+            {% endif %}
+            <hr class="my-3">
+            <div class="mt-2">
+                <h6>测试邮件</h6>
+                <p class="text-muted small">您可以发送测试邮件以验证邮箱配置是否正确。每日最多可发送3条。（今日已发送 {{ quota.sent }} 次，剩余 {{ quota.remaining }} 次）</p>
+                <button type="button" class="btn btn-sm btn-outline-info" id="sendTestEmailBtn">发送测试邮件</button>
+                <small id="testEmailStatus" class="ms-2"></small>
+            </div>
+        </div>
+    </div>
+    <div class="mb-3">
+        <label for="bio" class="form-label">个人简介</label>
+        <textarea class="form-control" id="bio" name="bio" rows="3">{{ user.bio|default('', true) }}</textarea>
+        <small class="text-muted">介绍一下你自己吧～</small>
+    </div>
+    <div class="mb-3">
+        <label for="avatar" class="form-label">头像 URL</label>
+        <input type="url" class="form-control" id="avatar" name="avatar" value="{{ user.avatar|default('', true) }}" placeholder="示例：https://q.qlogo.cn/g?b=qq&nk=123456789&s=100">
+        <small class="text-muted">请输入头像链接。如使用QQ头像请输入:https://q.qlogo.cn/g?b=qq&nk=qq号&s=100</small>
+    </div>
+    <div class="d-flex justify-content-between">
+        <a href="{{ url_for('profile', user_id=user.id) }}" class="btn btn-secondary">取消</a>
+        <button type="submit" class="btn btn-primary">保存更改</button>
+    </div>
+</form>
+
+{% if EMAIL_VERIFICATION_ENABLED and not user.verified %}
+<script>
+document.getElementById('sendVerificationBtn').addEventListener('click', function() {
+    const btn = this;
+    btn.disabled = true;
+    btn.textContent = '发送中...';
+    fetch('{{ url_for("send_verification_email") }}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({})
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('验证码已发送到您的邮箱，请查收');
+        } else {
+            alert('发送失败：' + (data.message || '未知错误'));
+        }
+        btn.disabled = false;
+        btn.textContent = '发送验证码';
+    })
+    .catch(error => {
+        alert('请求失败，请检查网络');
+        btn.disabled = false;
+        btn.textContent = '发送验证码';
+    });
+});
+
+document.getElementById('verifyBtn').addEventListener('click', function() {
+    const code = document.getElementById('verificationCode').value.trim();
+    if (!code) {
+        alert('请输入验证码');
+        return;
+    }
+    const btn = this;
+    btn.disabled = true;
+    btn.textContent = '验证中...';
+    fetch('{{ url_for("verify_email_code") }}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ code: code })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('验证成功！邮箱已验证。');
+            location.reload(); // 刷新页面更新状态
+        } else {
+            alert('验证失败：' + (data.message || '未知错误'));
+        }
+        btn.disabled = false;
+        btn.textContent = '验证';
+    })
+    .catch(error => {
+        alert('请求失败，请检查网络');
+        btn.disabled = false;
+        btn.textContent = '验证';
+    });
+});
+</script>
+{% endif %}
+<script>
+document.getElementById('sendTestEmailBtn').addEventListener('click', function() {
+    const btn = this;
+    const statusEl = document.getElementById('testEmailStatus');
+    btn.disabled = true;
+    statusEl.textContent = '';
+    btn.textContent = '发送中...';
+    fetch('{{ url_for("send_test_email") }}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({})
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('测试邮件发送成功：' + data.message);
+            statusEl.textContent = '发送成功';
+            statusEl.className = 'ms-2 text-success';
+        } else {
+            alert('发送失败：' + data.message);
+            statusEl.textContent = '发送失败：' + data.message;
+            statusEl.className = 'ms-2 text-danger';
+        }
+        btn.disabled = false;
+        btn.textContent = '发送测试邮件';
+    })
+    .catch(error => {
+        alert('请求失败，请检查网络');
+        statusEl.textContent = '网络错误';
+        statusEl.className = 'ms-2 text-danger';
+        btn.disabled = false;
+        btn.textContent = '发送测试邮件';
+    });
+});
+</script>
+{% endblock %}

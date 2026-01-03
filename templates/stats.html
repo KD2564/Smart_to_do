@@ -1,0 +1,183 @@
+{% extends "layout.html" %}
+
+{% block title %}数据统计 - Smart To-Do{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.css">
+<style>
+    .chart-container {
+        position: relative;
+        height: 300px;
+        width: 100%;
+    }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Completion rate line chart
+        const ctxLine = document.getElementById('completionChart').getContext('2d');
+        new Chart(ctxLine, {
+            type: 'line',
+            data: {
+                labels: {{ dates|tojson }},
+                datasets: [{
+                    label: '任务完成率 (%)',
+                    data: {{ rates|tojson }},
+                    borderColor: '#4361ee',
+                    backgroundColor: 'rgba(67, 97, 238, 0.1)',
+                    fill: true,
+                    tension: 0.4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    title: {
+                        display: true,
+                        text: '过去7天任务完成率变化'
+                    }
+                }
+            }
+        });
+
+        // Task status pie chart
+        const ctxPie = document.getElementById('statusChart').getContext('2d');
+        new Chart(ctxPie, {
+            type: 'pie',
+            data: {
+                labels: ['已完成', '进行中', '待开始'],
+                datasets: [{
+                    data: [{{ stats.completed_tasks }}, {{ stats.in_progress_tasks }}, {{ stats.pending_tasks }}],
+                    backgroundColor: ['#06d6a0', '#ffd166', '#6c757d']
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom'
+                    }
+                }
+            }
+        });
+    });
+</script>
+{% endblock %}
+
+{% block content %}
+<h1 class="mb-4"><i class="bi bi-bar-chart"></i> 数据统计</h1>
+
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card text-white bg-primary">
+            <div class="card-body">
+                <h5 class="card-title">总任务数</h5>
+                <p class="card-text display-6">{{ stats.total_tasks }}</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-white bg-success">
+            <div class="card-body">
+                <h5 class="card-title">已完成</h5>
+                <p class="card-text display-6">{{ stats.completed_tasks }}</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-white bg-warning">
+            <div class="card-body">
+                <h5 class="card-title">进行中</h5>
+                <p class="card-text display-6">{{ stats.in_progress_tasks }}</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-white bg-info">
+            <div class="card-body">
+                <h5 class="card-title">平均完成率</h5>
+                <p class="card-text display-6">{{ stats.avg_completion_rate }}%</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">任务完成率趋势</h5>
+            </div>
+            <div class="card-body">
+                <div class="chart-container">
+                    <canvas id="completionChart"></canvas>
+                </div>
+                <p class="text-muted small mt-2">显示过去7天每天的平均任务完成率。</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">任务状态分布</h5>
+            </div>
+            <div class="card-body">
+                <div class="chart-container">
+                    <canvas id="statusChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">详细统计</h5>
+            </div>
+            <div class="card-body">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>时间段</th>
+                            <th>任务总数</th>
+                            <th>完全完成数</th>
+                            <th>平均完成率</th>
+                            <th>最高完成率</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>过去7天</td>
+                            <td>{{ period_stats.last7.total }}</td>
+                            <td>{{ period_stats.last7.completed }}</td>
+                            <td>{{ period_stats.last7.avg_rate }}%</td>
+                            <td>{{ period_stats.last7.max_rate }}%</td>
+                        </tr>
+                        <tr>
+                            <td>过去30天</td>
+                            <td>{{ period_stats.last30.total }}</td>
+                            <td>{{ period_stats.last30.completed }}</td>
+                            <td>{{ period_stats.last30.avg_rate }}%</td>
+                            <td>{{ period_stats.last30.max_rate }}%</td>
+                        </tr>
+                        <tr>
+                            <td>过去一年</td>
+                            <td>{{ period_stats.last365.total }}</td>
+                            <td>{{ period_stats.last365.completed }}</td>
+                            <td>{{ period_stats.last365.avg_rate }}%</td>
+                            <td>{{ period_stats.last365.max_rate }}%</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

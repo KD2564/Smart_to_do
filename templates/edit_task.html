@@ -1,0 +1,106 @@
+{% extends "layout.html" %}
+
+{% block title %}编辑任务 - {{ task.name }}{% endblock %}
+
+{% block content %}
+<h1 class="mb-4"><i class="bi bi-pencil"></i> 编辑任务</h1>
+
+<form method="POST" action="{{ url_for('edit_task', task_id=task.id) }}">
+    <div class="row">
+        <div class="col-md-6 mb-3">
+            <label for="name" class="form-label">任务名称</label>
+            <input type="text" class="form-control" id="name" name="name" value="{{ task.name }}" required>
+        </div>
+        <div class="col-md-6 mb-3">
+            <label for="start_time" class="form-label">开始时间</label>
+            <input type="datetime-local" class="form-control" id="start_time" name="start_time" value="{{ task.start_time|default('', true) }}">
+        </div>
+    </div>
+    <div class="mb-3">
+        <label for="description" class="form-label">任务描述</label>
+        <textarea class="form-control" id="description" name="description" rows="3">{{ task.description|default('', true) }}</textarea>
+    </div>
+    <div class="row">
+        <div class="col-md-6 mb-3">
+            <label for="location" class="form-label">地点</label>
+            <input type="text" class="form-control" id="location" name="location" value="{{ task.location|default('', true) }}">
+        </div>
+        <div class="col-md-6 mb-3">
+            <label for="duration" class="form-label">预计用时 (分钟)</label>
+            <input type="number" class="form-control" id="duration" name="duration" min="1" value="{{ task.duration|default('', true) }}">
+        </div>
+    </div>
+    <div class="mb-3">
+        <label for="notes" class="form-label">备注</label>
+        <textarea class="form-control" id="notes" name="notes" rows="2">{{ task.notes|default('', true) }}</textarea>
+    </div>
+    <div class="mb-3 form-check">
+        <input type="checkbox" class="form-check-input" id="show_on_homepage" name="show_on_homepage" {% if task.show_on_homepage %}checked{% endif %}>
+        <label class="form-check-label" for="show_on_homepage">展示到主页（其他用户可查看）</label>
+    </div>
+    <div class="mb-3">
+        <label for="custom_reminder_times" class="form-label">提醒时间（任务开始前多少分钟，逗号分隔，留空表示不提醒）</label>
+        <input type="text" class="form-control" id="custom_reminder_times" name="custom_reminder_times"
+               placeholder="例如：10,30,60" value="{{ task.reminder_times|join(',') if task.reminder_times else '' }}">
+        <small class="text-muted">请输入以逗号分隔的分钟数，系统将在任务开始前通过邮件提醒您。如果不输入任何内容，则不会发送提醒。</small>
+    </div>
+    <div class="row">
+        <div class="col-md-6 mb-3">
+            <label for="status" class="form-label">状态</label>
+            <select class="form-select" id="status" name="status" {% if task.status == 'pending' %}disabled{% endif %}>
+                <option value="pending" {% if task.status == 'pending' %}selected{% endif %}>待开始</option>
+                <option value="in_progress" {% if task.status == 'in_progress' %}selected{% endif %}>进行中</option>
+                <option value="completed" {% if task.status == 'completed' %}selected{% endif %}>已完成</option>
+            </select>
+            {% if task.status == 'pending' %}
+            <small class="text-muted">任务未开始，不能修改状态。</small>
+            {% endif %}
+        </div>
+        <div class="col-md-6 mb-3">
+            <label for="completion_rate" class="form-label">完成率 (%)</label>
+            <input type="range" class="form-range" id="completion_rate" name="completion_rate" min="0" max="100" value="{{ task.completion_rate|default(0) }}" {% if task.status != 'completed' %}disabled{% endif %}>
+            <div class="d-flex justify-content-between">
+                <span>0%</span>
+                <span id="rate_display">{{ task.completion_rate|default(0) }}%</span>
+                <span>100%</span>
+            </div>
+        </div>
+    </div>
+    <div class="d-flex justify-content-between">
+        <a href="{{ url_for('task_detail', task_id=task.id) }}" class="btn btn-secondary">取消</a>
+        <button type="submit" class="btn btn-primary">保存更改</button>
+    </div>
+</form>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    const rateSlider = document.getElementById('completion_rate');
+    const rateDisplay = document.getElementById('rate_display');
+    rateSlider.addEventListener('input', function() {
+        rateDisplay.textContent = this.value + '%';
+    });
+
+    // 提醒时间复选框互斥逻辑
+    const reminderCheckboxes = document.querySelectorAll('input[name="reminder_times"]');
+    const noneCheckbox = document.getElementById('reminder_none');
+    const customInput = document.getElementById('custom_reminder_times');
+    if (reminderCheckboxes.length) {
+        reminderCheckboxes.forEach(cb => {
+            cb.addEventListener('change', function() {
+                if (this === noneCheckbox && this.checked) {
+                    // 如果选中“无提醒”，取消选中其他所有复选框
+                    reminderCheckboxes.forEach(other => {
+                        if (other !== noneCheckbox) other.checked = false;
+                    });
+                    // 清空自定义提醒时间输入框
+                    if (customInput) customInput.value = '';
+                } else if (this !== noneCheckbox && this.checked) {
+                    // 如果选中其他提醒时间，取消选中“无提醒”
+                    noneCheckbox.checked = false;
+                }
+            });
+        });
+    }
+</script>
+{% endblock %}

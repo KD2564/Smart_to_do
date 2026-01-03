@@ -1,0 +1,346 @@
+{
+    "1": {
+        "id": 1,
+        "sender_id": 2,
+        "receiver_id": 1,
+        "content": "",
+        "read": false,
+        "created_at": "2025-12-26T23:44:42.558006"
+    },
+    "2": {
+        "id": 2,
+        "sender_id": 2,
+        "receiver_id": 1,
+        "content": "",
+        "read": false,
+        "created_at": "2025-12-26T23:44:43.560204"
+    },
+    "3": {
+        "id": 3,
+        "sender_id": 2,
+        "receiver_id": 1,
+        "content": "",
+        "read": false,
+        "created_at": "2025-12-26T23:44:43.843816"
+    },
+    "4": {
+        "id": 4,
+        "sender_id": 2,
+        "receiver_id": 1,
+        "content": "",
+        "read": false,
+        "created_at": "2025-12-26T23:44:44.011351"
+    },
+    "5": {
+        "id": 5,
+        "sender_id": 2,
+        "receiver_id": 1,
+        "content": "",
+        "read": false,
+        "created_at": "2025-12-26T23:44:44.177887"
+    },
+    "6": {
+        "id": 6,
+        "sender_id": 2,
+        "receiver_id": 1,
+        "content": "",
+        "read": false,
+        "created_at": "2025-12-26T23:44:44.345419"
+    },
+    "7": {
+        "id": 7,
+        "sender_id": 2,
+        "receiver_id": 1,
+        "content": "",
+        "read": false,
+        "created_at": "2025-12-26T23:44:44.528046"
+    },
+    "8": {
+        "id": 8,
+        "sender_id": 2,
+        "receiver_id": 1,
+        "content": "",
+        "read": false,
+        "created_at": "2025-12-26T23:44:44.710933"
+    },
+    "9": {
+        "id": 9,
+        "sender_id": 2,
+        "receiver_id": 1,
+        "content": "",
+        "read": false,
+        "created_at": "2025-12-26T23:44:44.879102"
+    },
+    "10": {
+        "id": 10,
+        "sender_id": 2,
+        "receiver_id": 1,
+        "content": "",
+        "read": false,
+        "created_at": "2025-12-26T23:44:45.046194"
+    },
+    "11": {
+        "id": 11,
+        "sender_id": 1,
+        "receiver_id": 2,
+        "content": "",
+        "read": false,
+        "created_at": "2025-12-26T23:45:43.849155"
+    },
+    "12": {
+        "id": 12,
+        "sender_id": 1,
+        "receiver_id": 2,
+        "content": "",
+        "read": false,
+        "created_at": "2025-12-26T23:45:44.550664"
+    },
+    "13": {
+        "id": 13,
+        "sender_id": 1,
+        "receiver_id": 2,
+        "content": "",
+        "read": false,
+        "created_at": "2025-12-26T23:45:44.786954"
+    },
+    "14": {
+        "id": 14,
+        "sender_id": 1,
+        "receiver_id": 2,
+        "content": "",
+        "read": false,
+        "created_at": "2025-12-26T23:45:44.933976"
+    },
+    "15": {
+        "id": 15,
+        "sender_id": 1,
+        "receiver_id": 2,
+        "content": "",
+        "read": false,
+        "created_at": "2025-12-26T23:45:45.085474"
+    },
+    "16": {
+        "id": 16,
+        "sender_id": 1,
+        "receiver_id": 2,
+        "content": "",
+        "read": false,
+        "created_at": "2025-12-26T23:45:45.252252"
+    },
+    "17": {
+        "id": 17,
+        "sender_id": 1,
+        "receiver_id": 2,
+        "content": "",
+        "read": false,
+        "created_at": "2025-12-26T23:45:45.418093"
+    },
+    "18": {
+        "id": 18,
+        "sender_id": 1,
+        "receiver_id": 2,
+        "content": "",
+        "read": false,
+        "created_at": "2025-12-26T23:45:45.601940"
+    },
+    "19": {
+        "id": 19,
+        "sender_id": 1,
+        "receiver_id": 2,
+        "content": "",
+        "read": false,
+        "created_at": "2025-12-26T23:45:45.768788"
+    },
+    "20": {
+        "id": 20,
+        "sender_id": 1,
+        "receiver_id": 2,
+        "content": "",
+        "read": false,
+        "created_at": "2025-12-26T23:45:45.953611"
+    },
+    "21": {
+        "id": 21,
+        "sender_id": 1,
+        "receiver_id": 2,
+        "content": "",
+        "read": false,
+        "created_at": "2025-12-26T23:45:46.120742"
+    },
+    "22": {
+        "id": 22,
+        "sender_id": 1,
+        "receiver_id": 2,
+        "content": "",
+        "read": false,
+        "created_at": "2025-12-26T23:45:46.304317"
+    },
+    "23": {
+        "id": 23,
+        "sender_id": 1,
+        "receiver_id": 2,
+        "content": "",
+        "read": false,
+        "created_at": "2025-12-26T23:45:46.488588"
+    },
+    "24": {
+        "id": 24,
+        "sender_id": 1,
+        "receiver_id": 2,
+        "content": "",
+        "read": false,
+        "created_at": "2025-12-26T23:45:46.653604"
+    },
+    "25": {
+        "id": 25,
+        "sender_id": 1,
+        "receiver_id": 2,
+        "content": "",
+        "read": false,
+        "created_at": "2025-12-26T23:45:46.836596"
+    },
+    "26": {
+        "id": 26,
+        "sender_id": 1,
+        "receiver_id": 2,
+        "content": "",
+        "read": false,
+        "created_at": "2025-12-26T23:45:47.008309"
+    },
+    "27": {
+        "id": 27,
+        "sender_id": 1,
+        "receiver_id": 2,
+        "content": "",
+        "read": false,
+        "created_at": "2025-12-26T23:45:47.189016"
+    },
+    "28": {
+        "id": 28,
+        "sender_id": 1,
+        "receiver_id": 2,
+        "content": "",
+        "read": false,
+        "created_at": "2025-12-26T23:45:47.356293"
+    },
+    "29": {
+        "id": 29,
+        "sender_id": 1,
+        "receiver_id": 2,
+        "content": "",
+        "read": false,
+        "created_at": "2025-12-26T23:45:47.523354"
+    },
+    "30": {
+        "id": 30,
+        "sender_id": 1,
+        "receiver_id": 2,
+        "content": "",
+        "read": false,
+        "created_at": "2025-12-26T23:45:47.692207"
+    },
+    "31": {
+        "id": 31,
+        "sender_id": 1,
+        "receiver_id": 2,
+        "content": "",
+        "read": false,
+        "created_at": "2025-12-26T23:45:47.873800"
+    },
+    "32": {
+        "id": 32,
+        "sender_id": 1,
+        "receiver_id": 2,
+        "content": "",
+        "read": false,
+        "created_at": "2025-12-26T23:45:48.041098"
+    },
+    "33": {
+        "id": 33,
+        "sender_id": 1,
+        "receiver_id": 2,
+        "content": "",
+        "read": false,
+        "created_at": "2025-12-26T23:45:48.208668"
+    },
+    "34": {
+        "id": 34,
+        "sender_id": 1,
+        "receiver_id": 2,
+        "content": "",
+        "read": false,
+        "created_at": "2025-12-26T23:45:48.392100"
+    },
+    "35": {
+        "id": 35,
+        "sender_id": 1,
+        "receiver_id": 2,
+        "content": "",
+        "read": false,
+        "created_at": "2025-12-26T23:45:48.574627"
+    },
+    "36": {
+        "id": 36,
+        "sender_id": 1,
+        "receiver_id": 2,
+        "content": "",
+        "read": false,
+        "created_at": "2025-12-26T23:45:48.774979"
+    },
+    "37": {
+        "id": 37,
+        "sender_id": 1,
+        "receiver_id": 2,
+        "content": "",
+        "read": false,
+        "created_at": "2025-12-26T23:45:48.943176"
+    },
+    "38": {
+        "id": 38,
+        "sender_id": 1,
+        "receiver_id": 2,
+        "content": "",
+        "read": false,
+        "created_at": "2025-12-26T23:45:49.125738"
+    },
+    "39": {
+        "id": 39,
+        "sender_id": 1,
+        "receiver_id": 2,
+        "content": "",
+        "read": false,
+        "created_at": "2025-12-26T23:45:49.292382"
+    },
+    "40": {
+        "id": 40,
+        "sender_id": 1,
+        "receiver_id": 2,
+        "content": "",
+        "read": false,
+        "created_at": "2025-12-26T23:45:49.459828"
+    },
+    "41": {
+        "id": 41,
+        "sender_id": 1,
+        "receiver_id": 2,
+        "content": "",
+        "read": false,
+        "created_at": "2025-12-26T23:45:49.675041"
+    },
+    "42": {
+        "id": 42,
+        "sender_id": 1,
+        "receiver_id": 2,
+        "content": "123",
+        "read": false,
+        "created_at": "2025-12-26T23:45:52.180143"
+    },
+    "43": {
+        "id": 43,
+        "sender_id": 1,
+        "receiver_id": 2,
+        "content": "56565",
+        "read": false,
+        "created_at": "2026-01-03T19:18:11.088846"
+    }
+}

@@ -1,0 +1,32 @@
+{% extends "layout.html" %}
+
+{% block title %}首页 - Smart To-Do{% endblock %}
+
+{% block content %}
+<div class="row align-items-center mt-5">
+    <div class="col-md-6">
+        <h1 class="display-4 fw-bold">Smart To-Do</h1>
+        <p class="lead">一个智能的待办事项管理网站，帮你记录任务、提醒时间、与朋友分享，并统计你的完成情况。</p>
+        <p>功能包括：</p>
+        <ul>
+            <li>任务管理（添加、修改、删除、状态跟踪）</li>
+            <li>日历视图与提醒通知</li>
+            <li>用户私信与好友系统</li>
+            <li>社区分享帖子</li>
+            <li>数据统计与图表</li>
+            <li>注册登录与个人主页</li>
+        </ul>
+        <div class="mt-4">
+            {% if not session.user_id %}
+            <a href="{{ url_for('register') }}" class="btn btn-primary btn-lg me-2">立即注册</a>
+            <a href="{{ url_for('login') }}" class="btn btn-outline-primary btn-lg">登录</a>
+            {% else %}
+            <a href="{{ url_for('dashboard') }}" class="btn btn-primary btn-lg">进入仪表盘</a>
+            {% endif %}
+        </div>
+    </div>
+    <div class="col-md-6">
+        <img src="{{ url_for('static', filename='images/todo.svg') }}" alt="Todo illustration" class="img-fluid" onerror="this.style.display='none'">
+    </div>
+</div>
+{% endblock %}

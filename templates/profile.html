@@ -1,0 +1,110 @@
+{% extends "layout.html" %}
+
+{% block title %}{{ user.nickname }} 的主页 - Smart To-Do{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-4 text-center">
+        <img src="{{ user.avatar or url_for('static', filename='images/default-avatar.png') }}" alt="头像" class="profile-avatar mb-3" onerror="this.onerror=null; this.src='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg=='">
+        <h3>{{ user.nickname }}</h3>
+        <p class="text-muted">@{{ user.username }}</p>
+        <p>{{ user.bio or '这个人很懒，什么都没写。' }}</p>
+        
+        <div class="d-flex justify-content-around my-4">
+            <div class="text-center">
+                <h5>{{ user.followers|length }}</h5>
+                <p class="text-muted">粉丝</p>
+            </div>
+            <div class="text-center">
+                <h5>{{ user.following|length }}</h5>
+                <p class="text-muted">关注</p>
+            </div>
+            <div class="text-center">
+                <h5>{{ user.tasks_count or 0 }}</h5>
+                <p class="text-muted">任务</p>
+            </div>
+        </div>
+
+        {% if is_self %}
+        <a href="{{ url_for('edit_profile') }}" class="btn btn-outline-primary btn-block">编辑资料</a>
+        {% else %}
+        <form method="POST" action="{{ url_for('follow', user_id=user.id) }}" class="mb-2">
+            {% if is_following %}
+            <button type="submit" class="btn btn-outline-secondary btn-block">已关注</button>
+            {% else %}
+            <button type="submit" class="btn btn-primary btn-block">关注</button>
+            {% endif %}
+        </form>
+        <a href="{{ url_for('messages') }}?with_user={{ user.id }}" class="btn btn-outline-success btn-block">发送私信</a>
+        {% endif %}
+    </div>
+    <div class="col-md-8">
+        <ul class="nav nav-tabs" id="profileTab" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="tasks-tab" data-bs-toggle="tab" data-bs-target="#tasks" type="button">任务</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="posts-tab" data-bs-toggle="tab" data-bs-target="#posts" type="button">帖子</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="about-tab" data-bs-toggle="tab" data-bs-target="#about" type="button">关于</button>
+            </li>
+        </ul>
+        <div class="tab-content mt-3">
+            <div class="tab-pane fade show active" id="tasks" role="tabpanel">
+                <h5>最近的任务</h5>
+                {% if user_tasks %}
+                <ul class="list-group">
+                    {% for task in user_tasks %}
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        <a href="{{ url_for('task_detail', task_id=task.id) }}">{{ task.name }}</a>
+                        <span class="badge bg-{{ 'success' if task.status == 'completed' else 'warning' if task.status == 'in_progress' else 'secondary' }}">{{ task.status }}</span>
+                    </li>
+                    {% endfor %}
+                </ul>
+                {% else %}
+                <p class="text-muted">暂无任务。</p>
+                {% endif %}
+            </div>
+            <div class="tab-pane fade" id="posts" role="tabpanel">
+                <h5>最近的帖子</h5>
+                {% if user_posts %}
+                {% for post in user_posts %}
+                <div class="card mb-2">
+                    <div class="card-body">
+                        <p class="card-text">{{ post.content|truncate(200) }}</p>
+                        <small class="text-muted">{{ post.created_at|time_ago }}</small>
+                    </div>
+                </div>
+                {% endfor %}
+                {% else %}
+                <p class="text-muted">暂无帖子。</p>
+                {% endif %}
+            </div>
+            <div class="tab-pane fade" id="about" role="tabpanel">
+                <h5>用户信息</h5>
+                <table class="table">
+                    <tr>
+                        <th>邮箱</th>
+                        <td>{{ user.email }}</td>
+                    </tr>
+                    <tr>
+                        <th>注册时间</th>
+                        <td>{{ user.created_at|format_date }}</td>
+                    </tr>
+                    <tr>
+                        <th>邮箱验证</th>
+                        <td>
+                            {% if user.verified %}
+                            <span class="badge bg-success">已验证</span>
+                            {% else %}
+                            <span class="badge bg-warning">未验证</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,258 @@
+{% extends "layout.html" %}
+
+{% block title %}私信 - Smart To-Do{% endblock %}
+
+{% block extra_css %}
+<style>
+    .message-container {
+        height: 400px;
+        overflow-y: auto;
+        border: 1px solid #dee2e6;
+        border-radius: 10px;
+        padding: 15px;
+        background-color: #f8f9fa;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<h1 class="mb-4"><i class="bi bi-chat"></i> 私信</h1>
+
+<div class="row">
+    <div class="col-md-4">
+        <div class="card mb-3">
+            <div class="card-header">
+                <h5 class="mb-0">搜索用户</h5>
+            </div>
+            <div class="card-body">
+                <input type="text" class="form-control" id="search-users" placeholder="搜索全站用户、关注对象、粉丝...">
+                <div class="mt-2">
+                    <button class="btn btn-sm btn-outline-primary" id="search-btn">搜索</button>
+                </div>
+                <div id="search-results" class="mt-3" style="display:none;">
+                    <h6>搜索结果</h6>
+                    <ul class="list-group list-group-flush" id="search-results-list">
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="card mb-3">
+            <div class="card-header">
+                <h5 class="mb-0">关注对象</h5>
+            </div>
+            <div class="card-body">
+                <ul class="list-group list-group-flush">
+                    {% for user in following %}
+                    <li class="list-group-item d-flex justify-content-between align-items-center {% if with_user == user.id %}active{% endif %}">
+                        <a href="{{ url_for('messages', with_user=user.id) }}">{{ user.nickname or user.username }}</a>
+                        <span class="badge bg-primary rounded-pill">关注</span>
+                    </li>
+                    {% else %}
+                    <li class="list-group-item text-muted">暂无关注对象</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">粉丝</h5>
+            </div>
+            <div class="card-body">
+                <ul class="list-group list-group-flush">
+                    {% for user in followers %}
+                    <li class="list-group-item d-flex justify-content-between align-items-center {% if with_user == user.id %}active{% endif %}">
+                        <a href="{{ url_for('messages', with_user=user.id) }}">{{ user.nickname or user.username }}</a>
+                        <span class="badge bg-secondary rounded-pill">粉丝</span>
+                    </li>
+                    {% else %}
+                    <li class="list-group-item text-muted">暂无粉丝</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                {% if selected_user %}
+                <h5 class="mb-0">与 <strong>{{ selected_user.nickname or selected_user.username }}</strong> 的对话</h5>
+                <a href="{{ url_for('profile', user_id=selected_user.id) }}" class="btn btn-sm btn-outline-primary">查看资料</a>
+                {% else %}
+                <h5 class="mb-0">请选择对话对象</h5>
+                <button class="btn btn-sm btn-outline-primary" disabled>关注</button>
+                {% endif %}
+            </div>
+            <div class="card-body">
+                <div class="message-container mb-3" id="message-container">
+                    <!-- 加载更早消息的指示器 -->
+                    <div id="load-earlier-indicator" style="display: none; text-align: center; padding: 10px;">
+                        <div class="spinner-border spinner-border-sm text-primary" role="status">
+                            <span class="visually-hidden">加载中...</span>
+                        </div>
+                        <span class="ms-2">正在加载更早的消息...</span>
+                    </div>
+                    {% for msg in messages %}
+                    <div class="message-bubble {% if msg.sender_id == session.user_id %}message-sent{% else %}message-received{% endif %}">
+                        <div class="fw-bold">{{ msg.sender_name }}</div>
+                        <div>{{ msg.content }}</div>
+                        <div class="text-end small text-muted">{{ msg.created_at|time_ago }}</div>
+                    </div>
+                    {% else %}
+                    <p class="text-muted">还没有消息，开始对话吧。</p>
+                    {% endfor %}
+                </div>
+                <form method="POST" action="{{ url_for('send_message') }}">
+                    {% if with_user %}
+                    <input type="hidden" name="receiver_id" value="{{ with_user }}">
+                    {% else %}
+                    <input type="hidden" name="receiver_id" value="">
+                    {% endif %}
+                    <div class="input-group">
+                        <textarea class="form-control" id="message-input" name="content" rows="2" placeholder="输入消息..." {% if not with_user %}disabled{% endif %}></textarea>
+                        <button class="btn btn-primary" id="send-message" type="submit" {% if not with_user %}disabled{% endif %}>发送</button>
+                    </div>
+                    <small class="text-muted">未互相关注的用户每天最多发送10条消息。</small>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+// 注入模板变量
+let hasMore = {{ has_more|tojson }};
+const CURRENT_LIMIT = {{ limit|tojson }};
+let currentOffset = {{ offset|tojson }};
+const WITH_USER = {{ with_user|tojson }};
+
+document.addEventListener('DOMContentLoaded', function() {
+    const searchInput = document.getElementById('search-users');
+    const searchBtn = document.getElementById('search-btn');
+    const searchResults = document.getElementById('search-results');
+    const searchResultsList = document.getElementById('search-results-list');
+    const messageContainer = document.getElementById('message-container');
+    const loadEarlierIndicator = document.getElementById('load-earlier-indicator');
+
+    // 自动滚动消息容器到底部（初始加载）
+    if (messageContainer) {
+        messageContainer.scrollTop = messageContainer.scrollHeight;
+    }
+
+    // 无限滚动加载更早的消息
+    let loading = false;
+    if (messageContainer && WITH_USER) {
+        messageContainer.addEventListener('scroll', function() {
+            // 如果滚动到顶部附近（距离顶部小于50像素）且还有更多消息且未在加载中
+            if (messageContainer.scrollTop < 50 && hasMore && !loading) {
+                loadEarlierMessages();
+            }
+        });
+    }
+
+    function loadEarlierMessages() {
+        if (loading) return;
+        loading = true;
+        loadEarlierIndicator.style.display = 'block';
+        
+        // 计算新的偏移量
+        const newOffset = currentOffset + CURRENT_LIMIT;
+        
+        fetch(`/messages?with_user=${WITH_USER}&limit=${CURRENT_LIMIT}&offset=${newOffset}`)
+            .then(response => response.text())
+            .then(html => {
+                // 解析返回的HTML，提取消息部分
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(html, 'text/html');
+                const newMessagesContainer = doc.getElementById('message-container');
+                if (newMessagesContainer) {
+                    // 获取新消息元素（排除加载指示器）
+                    const newMessageElements = Array.from(newMessagesContainer.querySelectorAll('.message-bubble'));
+                    // 将新消息插入到现有消息之前（保留顺序）
+                    const container = document.getElementById('message-container');
+                    // 在加载指示器之后插入
+                    const referenceNode = loadEarlierIndicator.nextSibling;
+                    newMessageElements.forEach(el => {
+                        container.insertBefore(el.cloneNode(true), referenceNode);
+                    });
+                    // 更新偏移量和是否有更多消息
+                    if (newMessageElements.length < CURRENT_LIMIT) {
+                        // 没有更多消息
+                        hasMore = false;
+                    } else {
+                        currentOffset = newOffset;
+                    }
+                }
+                loading = false;
+                loadEarlierIndicator.style.display = 'none';
+            })
+            .catch(error => {
+                console.error('加载消息失败:', error);
+                loading = false;
+                loadEarlierIndicator.style.display = 'none';
+            });
+    }
+
+    searchBtn.addEventListener('click', performSearch);
+    searchInput.addEventListener('keyup', function(event) {
+        if (event.key === 'Enter') {
+            performSearch();
+        }
+    });
+
+    function performSearch() {
+        const query = searchInput.value.trim();
+        if (!query) {
+            alert('请输入搜索关键词');
+            return;
+        }
+        // 显示加载状态
+        searchResultsList.innerHTML = '<li class="list-group-item">搜索中...</li>';
+        searchResults.style.display = 'block';
+
+        fetch('/api/search_users?q=' + encodeURIComponent(query))
+            .then(response => response.json())
+            .then(data => {
+                searchResultsList.innerHTML = '';
+                if (data.error) {
+                    searchResultsList.innerHTML = '<li class="list-group-item text-danger">' + data.error + '</li>';
+                    return;
+                }
+                if (data.users.length === 0) {
+                    searchResultsList.innerHTML = '<li class="list-group-item text-muted">未找到用户</li>';
+                    return;
+                }
+                // 分类显示
+                const categories = {
+                    'all': '全站用户',
+                    'following': '关注对象',
+                    'followers': '粉丝',
+                    'mutual': '互相关注'
+                };
+                for (const [category, label] of Object.entries(categories)) {
+                    const filtered = data.users.filter(u => u.category === category);
+                    if (filtered.length > 0) {
+                        const header = document.createElement('li');
+                        header.className = 'list-group-item bg-light fw-bold';
+                        header.textContent = label;
+                        searchResultsList.appendChild(header);
+                        filtered.forEach(user => {
+                            const item = document.createElement('li');
+                            item.className = 'list-group-item d-flex justify-content-between align-items-center';
+                            item.innerHTML = `
+                                <a href="/profile/${user.id}">${user.nickname || user.username}</a>
+                                <span class="badge bg-${user.category === 'following' ? 'primary' : user.category === 'followers' ? 'secondary' : user.category === 'mutual' ? 'success' : 'light'} rounded-pill">${user.category === 'following' ? '关注' : user.category === 'followers' ? '粉丝' : user.category === 'mutual' ? '互相关注' : '全站'}</span>
+                            `;
+                            searchResultsList.appendChild(item);
+                        });
+                    }
+                }
+            })
+            .catch(error => {
+                console.error('搜索失败:', error);
+                searchResultsList.innerHTML = '<li class="list-group-item text-danger">搜索失败，请重试</li>';
+            });
+    }
+});
+</script>
+{% endblock %}

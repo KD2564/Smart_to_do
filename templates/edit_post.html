@@ -1,0 +1,30 @@
+{% extends "layout.html" %}
+
+{% block title %}编辑帖子 - Smart To-Do{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1><i class="bi bi-pencil-square"></i> 编辑帖子</h1>
+    <div class="card">
+        <div class="card-body">
+            <form method="POST" action="{{ url_for('edit_post', post_id=post.id) }}">
+                <div class="mb-3">
+                    <label for="content" class="form-label">内容</label>
+                    <textarea class="form-control" id="content" name="content" rows="5">{{ post.content }}</textarea>
+                </div>
+                <div class="mb-3">
+                    <small class="text-muted">如需插入图片，请在正文中使用 [图片URL] 格式，例如 [https://example.com/image.jpg]</small>
+                </div>
+                <div class="d-flex justify-content-between">
+                    <button type="submit" class="btn btn-primary">保存更改</button>
+                    <a href="{{ url_for('community') }}" class="btn btn-outline-secondary">取消</a>
+                </div>
+            </form>
+            <hr>
+            <form method="POST" action="{{ url_for('delete_post', post_id=post.id) }}" onsubmit="return confirm('确定要删除这个帖子吗？此操作不可撤销。');">
+                <button type="submit" class="btn btn-danger">删除帖子</button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

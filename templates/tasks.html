@@ -1,0 +1,69 @@
+{% extends "layout.html" %}
+
+{% block title %}任务列表 - Smart To-Do{% endblock %}
+
+{% block content %}
+<h1 class="mb-4"><i class="bi bi-list-check"></i> 我的任务</h1>
+<div class="d-flex justify-content-between mb-3">
+    <a href="{{ url_for('add_task') }}" class="btn btn-primary"><i class="bi bi-plus-circle"></i> 添加任务</a>
+    <div class="btn-group">
+        <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">筛选</button>
+        <ul class="dropdown-menu">
+            <li><a class="dropdown-item" href="?status=all">全部</a></li>
+            <li><a class="dropdown-item" href="?status=pending">待开始</a></li>
+            <li><a class="dropdown-item" href="?status=in_progress">进行中</a></li>
+            <li><a class="dropdown-item" href="?status=completed">已完成</a></li>
+        </ul>
+    </div>
+</div>
+
+{% if tasks %}
+<div class="table-responsive">
+    <table class="table table-hover">
+        <thead>
+            <tr>
+                <th>名称</th>
+                <th>开始时间</th>
+                <th>地点</th>
+                <th>状态</th>
+                <th>完成率</th>
+                <th>操作</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for task in tasks %}
+            <tr>
+                <td><a href="{{ url_for('task_detail', task_id=task.id) }}">{{ task.name }}</a></td>
+                <td>{{ task.start_time|default('未设置', true) }}</td>
+                <td>{{ task.location|default('未设置', true) }}</td>
+                <td>
+                    <span class="badge bg-{{ 'success' if task.status == 'completed' else 'warning' if task.status == 'in_progress' else 'secondary' }}">
+                        {{ task.status }}
+                    </span>
+                </td>
+                <td>
+                    {% if task.completion_rate is defined %}
+                    <div class="progress" style="height: 20px; width: 100px;">
+                        <div class="progress-bar" role="progressbar" style="width: {{ task.completion_rate }}%;">{{ task.completion_rate }}%</div>
+                    </div>
+                    {% else %}
+                    <span class="text-muted">未设置</span>
+                    {% endif %}
+                </td>
+                <td>
+                    <a href="{{ url_for('edit_task', task_id=task.id) }}" class="btn btn-sm btn-outline-primary"><i class="bi bi-pencil"></i></a>
+                    <form method="POST" action="{{ url_for('delete_task', task_id=task.id) }}" class="d-inline" onsubmit="return confirm('确定删除吗？');">
+                        <button type="submit" class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></button>
+                    </form>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% else %}
+<div class="alert alert-info">
+    您还没有任何任务。 <a href="{{ url_for('add_task') }}">添加第一个任务</a>
+</div>
+{% endif %}
+{% endblock %}

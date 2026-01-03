@@ -1,0 +1,265 @@
+{% extends "layout.html" %}
+
+{% block title %}日历 - Smart To-Do{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.css">
+<style>
+    #calendar {
+        max-width: 100%;
+        margin: 0 auto;
+        background-color: white;
+        border-radius: 12px;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+        padding: 20px;
+    }
+    .fc-daygrid-day-number {
+        font-size: 1.1em;
+        font-weight: 500;
+        color: #333;
+    }
+    .fc-day-today {
+        background-color: rgba(67, 97, 238, 0.1) !important;
+    }
+    .fc-daygrid-day.fc-day-today .fc-daygrid-day-number {
+        font-weight: bold;
+        color: #4361ee;
+    }
+    .fc-event {
+        cursor: pointer;
+        border-radius: 6px;
+        padding: 2px 6px;
+        font-size: 0.9em;
+        border: none;
+    }
+    .fc-button {
+        background-color: #4361ee !important;
+        border-color: #4361ee !important;
+        color: white !important;
+        border-radius: 6px !important;
+        font-weight: 500;
+    }
+    .fc-button:hover {
+        background-color: #3a56d4 !important;
+        border-color: #3a56d4 !important;
+    }
+    .fc-button-active {
+        background-color: #2a46c4 !important;
+        border-color: #2a46c4 !important;
+    }
+    .fc-toolbar-title {
+        font-size: 1.8em;
+        font-weight: 600;
+        color: #333;
+    }
+    .fc-col-header-cell {
+        background-color: #f8f9fa;
+        padding: 10px 0;
+        font-weight: 600;
+        color: #555;
+    }
+    .fc-daygrid-day {
+        transition: background-color 0.2s;
+    }
+    .fc-daygrid-day:hover {
+        background-color: #f0f2ff;
+    }
+    .calendar-dot {
+        display: inline-block;
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background-color: #4361ee;
+        margin-left: 2px;
+    }
+    .today-tasks-card {
+        border-radius: 12px;
+        border: 1px solid #e0e0e0;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        padding: 20px;
+        margin-top: 30px;
+        background-color: white;
+    }
+    .today-tasks-card h5 {
+        color: #4361ee;
+        font-weight: 600;
+        margin-bottom: 15px;
+    }
+    .today-tasks-card .list-group-item {
+        border: none;
+        border-bottom: 1px solid #f0f0f0;
+        padding: 12px 15px;
+    }
+    .today-tasks-card .list-group-item:last-child {
+        border-bottom: none;
+    }
+    .calendar-dot-red {
+        position: absolute;
+        bottom: 5px;
+        right: 5px;
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        background-color: #dc3545;
+        color: white;
+        font-size: 0.7em;
+        font-weight: bold;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 5;
+    }
+    /* 隐藏 FullCalendar 默认的事件条 */
+    .fc-event {
+        display: none !important;
+    }
+    /* 确保日期单元格有相对定位 */
+    .fc-daygrid-day {
+        position: relative;
+    }
+    .fc-daygrid-day-frame {
+        position: relative;
+    }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/locales/zh-cn.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const calendarEl = document.getElementById('calendar');
+        const events = {{ events|tojson }};
+        
+        // Build a map of date -> tasks
+        const tasksByDate = {};
+        events.forEach(event => {
+            const dateStr = event.start.split('T')[0];
+            if (!tasksByDate[dateStr]) {
+                tasksByDate[dateStr] = [];
+            }
+            tasksByDate[dateStr].push(event);
+        });
+
+        const calendar = new FullCalendar.Calendar(calendarEl, {
+            initialView: 'dayGridMonth',
+            locale: 'zh-cn',
+            events: events,
+            eventClick: function(info) {
+                // Redirect to task detail page
+                const taskId = info.event.extendedProps.taskId;
+                if (taskId) {
+                    window.location.href = '/tasks/' + taskId;
+                }
+            },
+            dayCellDidMount: function(info) {
+                const date = info.date;
+                // 获取本地日期字符串 YYYY-MM-DD
+                const year = date.getFullYear();
+                const month = String(date.getMonth() + 1).padStart(2, '0');
+                const day = String(date.getDate()).padStart(2, '0');
+                const dateStr = `${year}-${month}-${day}`;
+                const tasks = tasksByDate[dateStr] || [];
+                
+                // Add red dot with task count
+                if (tasks.length > 0) {
+                    const dot = document.createElement('div');
+                    dot.className = 'calendar-dot-red';
+                    dot.textContent = tasks.length;
+                    info.el.appendChild(dot);
+                    
+                    // Make the cell clickable to show modal
+                    info.el.style.cursor = 'pointer';
+                    info.el.addEventListener('click', function() {
+                        showDayTasksModal(dateStr, tasks);
+                    });
+                }
+            }
+        });
+        calendar.render();
+
+        // Function to show modal with tasks for a day
+        function showDayTasksModal(dateStr, tasks) {
+            const modalLabel = document.getElementById('dayTasksModalLabel');
+            modalLabel.textContent = '任务详情 - ' + dateStr;
+            
+            const tasksList = document.getElementById('dayTasksList');
+            tasksList.innerHTML = '';
+            
+            if (tasks.length === 0) {
+                tasksList.innerHTML = '<p class="text-muted">该日没有任务。</p>';
+            } else {
+                tasks.forEach(task => {
+                    const taskItem = document.createElement('div');
+                    taskItem.className = 'task-item mb-3';
+                    const taskTitle = document.createElement('h6');
+                    const taskLink = document.createElement('a');
+                    taskLink.href = '/tasks/' + task.extendedProps.taskId;
+                    taskLink.textContent = task.title;
+                    taskLink.addEventListener('click', function(e) {
+                        e.stopPropagation(); // prevent modal close
+                    });
+                    taskTitle.appendChild(taskLink);
+                    
+                    const taskTime = document.createElement('p');
+                    taskTime.className = 'small text-muted mb-1';
+                    taskTime.textContent = '时间: ' + (task.extendedProps.startTime || task.start);
+                    
+                    const taskLocation = document.createElement('p');
+                    taskLocation.className = 'small text-muted';
+                    taskLocation.textContent = '地点: ' + (task.extendedProps.location || '未设置');
+                    
+                    taskItem.appendChild(taskTitle);
+                    taskItem.appendChild(taskTime);
+                    taskItem.appendChild(taskLocation);
+                    tasksList.appendChild(taskItem);
+                });
+            }
+            
+            // Show modal using Bootstrap 5
+            const modal = new bootstrap.Modal(document.getElementById('dayTasksModal'));
+            modal.show();
+        }
+    });
+</script>
+{% endblock %}
+
+{% block content %}
+<h1 class="mb-4"><i class="bi bi-calendar"></i> 任务日历</h1>
+<p class="text-muted">点击日期可以查看当天的任务。有任务的日子会显示蓝色圆点。</p>
+
+<div id="calendar"></div>
+
+<div class="today-tasks-card">
+    <h5><i class="bi bi-list-task"></i> 今日任务</h5>
+    <ul class="list-group">
+        {% for task in today_tasks %}
+        <li class="list-group-item d-flex justify-content-between align-items-center">
+            <a href="{{ url_for('task_detail', task_id=task.id) }}">{{ task.name }}</a>
+            <span class="badge bg-primary">{{ task.start_time|format_time }}</span>
+        </li>
+        {% else %}
+        <li class="list-group-item text-muted">今天没有任务。</li>
+        {% endfor %}
+    </ul>
+</div>
+
+<!-- Modal for day tasks -->
+<div class="modal fade" id="dayTasksModal" tabindex="-1" aria-labelledby="dayTasksModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="dayTasksModalLabel">任务详情</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div id="dayTasksList"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">关闭</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

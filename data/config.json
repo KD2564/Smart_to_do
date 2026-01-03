@@ -1,0 +1,12 @@
+{
+    "deepseek_api_key": "你猜",
+    "deepseek_api_url": "https://api.deepseek.com/chat/completions",
+    "ai_enabled": true,
+    "mail_server": "smtp.163.com",
+    "mail_port": 465,
+    "mail_use_tls": false,
+    "mail_username": "你猜",
+    "mail_password": "你猜",
+    "mail_default_sender": "你猜",
+    "email_verification_enabled": true
+}

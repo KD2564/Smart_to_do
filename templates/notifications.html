@@ -1,0 +1,98 @@
+{% extends "layout.html" %}
+
+{% block title %}通知 - Smart To-Do{% endblock %}
+
+{% block content %}
+<h1 class="mb-4"><i class="bi bi-bell"></i> 系统通知</h1>
+
+{% if notifications %}
+<div class="list-group">
+    {% for notif in notifications %}
+    <div class="list-group-item list-group-item-action {% if not notif.read %}list-group-item-primary{% endif %}" data-notif-id="{{ notif.id }}">
+        <div class="d-flex w-100 justify-content-between">
+            <h5 class="mb-1">{{ notif.title }}</h5>
+            <small>{{ notif.created_at|time_ago }}</small>
+        </div>
+        <p class="mb-1">{{ notif.content }}</p>
+        <small class="text-muted">类型: {{ notif.type }}</small>
+        {% if not notif.read %}
+        <form method="POST" action="{{ url_for('mark_notification_read', notif_id=notif.id) }}" class="d-inline mark-read-form" data-notif-id="{{ notif.id }}">
+            <button type="submit" class="btn btn-sm btn-outline-success">标记为已读</button>
+        </form>
+        {% endif %}
+    </div>
+    {% endfor %}
+</div>
+{% if total_pages > 1 %}
+<nav aria-label="通知分页">
+    <ul class="pagination justify-content-center">
+        <li class="page-item {% if not has_prev %}disabled{% endif %}">
+            <a class="page-link" href="{{ url_for('notifications', page=page-1, per_page=per_page) }}" aria-label="上一页">
+                <span aria-hidden="true">&laquo;</span>
+            </a>
+        </li>
+        {% for p in page_range %}
+          {% if p is string %}
+            <li class="page-item disabled">
+              <span class="page-link">...</span>
+            </li>
+          {% else %}
+            <li class="page-item {% if p == page %}active{% endif %}">
+              <a class="page-link" href="{{ url_for('notifications', page=p, per_page=per_page) }}">{{ p }}</a>
+            </li>
+          {% endif %}
+        {% endfor %}
+        <li class="page-item {% if not has_next %}disabled{% endif %}">
+            
+            <a class="page-link" href="{{ url_for('notifications', page=page+1, per_page=per_page) }}" aria-label="下一页">
+                <span aria-hidden="true">&raquo;</span>
+            </a>
+        </li>
+    </ul>
+</nav>
+{% endif %}
+{% else %}
+<div class="alert alert-info">
+    暂无通知。
+</div>
+{% endif %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // 标记已读表单AJAX处理
+    document.querySelectorAll('form.mark-read-form').forEach(form => {
+        form.addEventListener('submit', function(event) {
+            event.preventDefault();
+            const notifId = this.dataset.notifId;
+            const formData = new FormData(this);
+            const button = this.querySelector('button');
+            const listItem = this.closest('.list-group-item');
+            fetch(this.action, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // 移除按钮
+                    this.remove();
+                    // 更新列表项样式
+                    listItem.classList.remove('list-group-item-primary');
+                    // 可选：更新未读计数（如果页面有显示）
+                    const unreadCountElem = document.getElementById('unread-count');
+                    if (unreadCountElem) {
+                        let count = parseInt(unreadCountElem.textContent);
+                        if (!isNaN(count) && count > 0) {
+                            unreadCountElem.textContent = count - 1;
+                        }
+                    }
+                }
+            })
+            .catch(error => console.error('Error:', error));
+        });
+    });
+});
+</script>
+{% endblock %}

@@ -1,0 +1,150 @@
+{% extends "layout.html" %}
+
+{% block title %}仪表盘 - Smart To-Do{% endblock %}
+
+{% block content %}
+<h1 class="mb-4"><i class="bi bi-speedometer2"></i> 仪表盘</h1>
+<div class="row">
+    <div class="col-md-3">
+        <div class="card text-white bg-primary mb-3">
+            <div class="card-body">
+                <h5 class="card-title">任务总数</h5>
+                <p class="card-text display-6">{{ stats.total_tasks }}</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-white bg-success mb-3">
+            <div class="card-body">
+                <h5 class="card-title">已完成</h5>
+                <p class="card-text display-6">{{ stats.completed_tasks }}</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-white bg-warning mb-3">
+            <div class="card-body">
+                <h5 class="card-title">进行中</h5>
+                <p class="card-text display-6">{{ stats.in_progress_tasks }}</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-white bg-info mb-3">
+            <div class="card-body">
+                <h5 class="card-title">待开始</h5>
+                <p class="card-text display-6">{{ stats.pending_tasks }}</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">近期任务</h5>
+            </div>
+            <div class="card-body">
+                {% if recent_tasks %}
+                <div class="list-group">
+                    {% for task in recent_tasks %}
+                    <a href="{{ url_for('task_detail', task_id=task.id) }}" class="list-group-item list-group-item-action">
+                        <div class="d-flex w-100 justify-content-between">
+                            <h6 class="mb-1">{{ task.name }}</h6>
+                            <small>{{ task.start_time|default('未设置', true) }}</small>
+                        </div>
+                        <p class="mb-1">{{ task.description|truncate(50) }}</p>
+                        <small>
+                            <span class="badge bg-{{ 'success' if task.status == 'completed' else 'warning' if task.status == 'in_progress' else 'secondary' }}">
+                                {{ task.status }}
+                            </span>
+                            {% if task.completion_rate is defined %}
+                            <span class="badge bg-info">{{ task.completion_rate }}%</span>
+                            {% endif %}
+                        </small>
+                    </a>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <p class="text-muted">暂无任务。<a href="{{ url_for('tasks') }}">去添加一个</a></p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">最近通知</h5>
+            </div>
+            <div class="card-body">
+                {% if recent_notifications %}
+                <div class="list-group">
+                    {% for notif in recent_notifications %}
+                    <div class="list-group-item list-group-item-action {% if not notif.read %}list-group-item-primary{% endif %}">
+                        <div class="d-flex w-100 justify-content-between">
+                            <h6 class="mb-1">{{ notif.title }}</h6>
+                            <small>{{ notif.created_at|time_ago }}</small>
+                        </div>
+                        <p class="mb-1 small">{{ notif.content }}</p>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <p class="text-muted">暂无通知。</p>
+                {% endif %}
+                <a href="{{ url_for('notifications') }}" class="btn btn-outline-primary btn-sm mt-2">查看全部</a>
+            </div>
+        </div>
+        <div class="card mt-3">
+            <div class="card-header">
+                <h5 class="mb-0">快捷操作</h5>
+            </div>
+            <div class="card-body">
+                <a href="{{ url_for('add_task') }}" class="btn btn-primary btn-sm mb-2"><i class="bi bi-plus-circle"></i> 添加任务</a>
+                <a href="{{ url_for('calendar_view') }}" class="btn btn-outline-secondary btn-sm mb-2"><i class="bi bi-calendar"></i> 查看日历</a>
+                <a href="{{ url_for('community') }}" class="btn btn-outline-success btn-sm mb-2"><i class="bi bi-people"></i> 社区动态</a>
+                <a href="{{ url_for('messages') }}" class="btn btn-outline-info btn-sm mb-2"><i class="bi bi-chat"></i> 私信</a>
+                {% if EMAIL_VERIFICATION_ENABLED %}
+                <hr class="my-2">
+                <button class="btn btn-outline-warning btn-sm mb-2" id="sendTestEmailBtn"><i class="bi bi-envelope"></i> 发送测试邮件</button>
+                <small class="text-muted d-block">今日剩余 {{ quota.remaining }}/3 次</small>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+var sendTestEmailBtn = document.getElementById('sendTestEmailBtn');
+if (sendTestEmailBtn) {
+    sendTestEmailBtn.addEventListener('click', function() {
+        const btn = this;
+        btn.disabled = true;
+        btn.textContent = '发送中...';
+        fetch('{{ url_for("send_test_email") }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({})
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('测试邮件发送成功：' + data.message);
+                location.reload(); // 刷新页面更新配额显示
+            } else {
+                alert('发送失败：' + data.message);
+            }
+            btn.disabled = false;
+            btn.textContent = '发送测试邮件';
+        })
+        .catch(error => {
+            alert('请求失败，请检查网络');
+            btn.disabled = false;
+            btn.textContent = '发送测试邮件';
+        });
+    });
+}
+</script>
+{% endblock %}

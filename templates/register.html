@@ -1,0 +1,126 @@
+{% extends "layout.html" %}
+
+{% block title %}注册 - Smart To-Do{% endblock %}
+
+{% block extra_js %}
+<script>
+    function toggleVerificationField() {
+        var enabled = document.getElementById('email_verification_enabled').value === 'true';
+        document.getElementById('verification_code_group').style.display = enabled ? 'block' : 'none';
+    }
+    window.onload = toggleVerificationField;
+
+    // 发送验证码
+    document.addEventListener('DOMContentLoaded', function() {
+        var sendBtn = document.getElementById('send_code');
+        if (sendBtn) {
+            sendBtn.addEventListener('click', function() {
+                var emailInput = document.getElementById('email');
+                var email = emailInput.value.trim();
+                if (!email) {
+                    alert('请输入邮箱地址');
+                    emailInput.focus();
+                    return;
+                }
+                // 禁用按钮，防止重复点击
+                var originalText = sendBtn.innerHTML;
+                sendBtn.disabled = true;
+                sendBtn.innerHTML = '发送中...';
+                // 发送请求
+                var formData = new FormData();
+                formData.append('email', email);
+                fetch('/register/send_verification_code', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert('验证码已发送到您的邮箱，请注意查收');
+                        // 开始倒计时
+                        startCountdown(sendBtn, 60);
+                    } else {
+                        alert('发送失败：' + data.message);
+                        sendBtn.disabled = false;
+                        sendBtn.innerHTML = originalText;
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('网络错误，请稍后重试');
+                    sendBtn.disabled = false;
+                    sendBtn.innerHTML = originalText;
+                });
+            });
+        }
+    });
+
+    // 倒计时函数
+    function startCountdown(button, seconds) {
+        var remaining = seconds;
+        button.innerHTML = remaining + '秒后重试';
+        var timer = setInterval(function() {
+            remaining--;
+            if (remaining <= 0) {
+                clearInterval(timer);
+                button.disabled = false;
+                button.innerHTML = '发送验证码';
+            } else {
+                button.innerHTML = remaining + '秒后重试';
+            }
+        }, 1000);
+    }
+</script>
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8 col-lg-6">
+        <div class="card shadow">
+            <div class="card-header bg-success text-white">
+                <h4 class="mb-0"><i class="bi bi-person-plus"></i> 用户注册</h4>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('register') }}">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="username" class="form-label">用户名</label>
+                            <input type="text" class="form-control" id="username" name="username" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="email" class="form-label">邮箱</label>
+                            <input type="email" class="form-control" id="email" name="email" required>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="password" class="form-label">密码</label>
+                            <input type="password" class="form-control" id="password" name="password" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="confirm_password" class="form-label">确认密码</label>
+                            <input type="password" class="form-control" id="confirm_password" name="confirm_password" required>
+                        </div>
+                    </div>
+                    <input type="hidden" id="email_verification_enabled" value="{{ 'true' if email_verification_enabled else 'false' }}">
+                                         <div id="verification_code_group" class="mb-3" style="display: {% if email_verification_enabled %}block{% else %}none{% endif %};">
+                                             <label for="verification_code" class="form-label">邮箱验证码</label>
+                                             <div class="input-group">
+                                                 <input type="text" class="form-control" id="verification_code" name="verification_code" {% if email_verification_enabled %} required {% endif %}>
+                                                 <button class="btn btn-outline-secondary" type="button" id="send_code">发送验证码</button>
+                                             </div>
+                                             <small class="text-muted">验证码将发送到您的邮箱，请在5分钟内填写。</small>
+                                         </div>
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-success">注册</button>
+                    </div>
+                </form>
+                <hr>
+                <p class="text-center mb-0">
+                    已有账号？ <a href="{{ url_for('login') }}">点击登录</a>
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

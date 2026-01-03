@@ -1,0 +1,166 @@
+{% extends "layout.html" %}
+
+{% block title %}任务详情 - {{ task.name }}{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h4 class="mb-0">{{ task.name }}</h4>
+                <span class="badge bg-{{ 'success' if task.status == 'completed' else 'warning' if task.status == 'in_progress' else 'secondary' }}">{{ task.status }}</span>
+            </div>
+            <div class="card-body">
+                <table class="table">
+                    <tr>
+                        <th width="30%">开始时间</th>
+                        <td>{{ task.start_time|default('未设置', true) }}</td>
+                    </tr>
+                    <tr>
+                        <th>地点</th>
+                        <td>{{ task.location|default('未设置', true) }}</td>
+                    </tr>
+                    <tr>
+                        <th>预计用时</th>
+                        <td>{{ task.duration|default('未设置', true) }} 分钟</td>
+                    </tr>
+                    <tr>
+                        <th>完成率</th>
+                        <td>
+                            {% if task.completion_rate is defined %}
+                            <div class="progress" style="height: 25px;">
+                                <div class="progress-bar" role="progressbar" style="width: {{ task.completion_rate }}%;">{{ task.completion_rate }}%</div>
+                            </div>
+                            {% else %}
+                            <span class="text-muted">未设置</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    <tr>
+                        <th>创建时间</th>
+                        <td>{{ task.created_at|format_date }}</td>
+                    </tr>
+                </table>
+                <h5>任务描述</h5>
+                <p class="card-text">{{ task.description or '暂无描述' }}</p>
+                <h5>备注</h5>
+                <p class="card-text">{{ task.notes or '无备注' }}</p>
+            </div>
+            <div class="card-footer">
+                {% if is_owner %}
+                <a href="{{ url_for('edit_task', task_id=task.id) }}" class="btn btn-primary"><i class="bi bi-pencil"></i> 编辑</a>
+                <form method="POST" action="{{ url_for('delete_task', task_id=task.id) }}" class="d-inline" onsubmit="return confirm('确定删除此任务吗？');">
+                    <button type="submit" class="btn btn-danger"><i class="bi bi-trash"></i> 删除</button>
+                </form>
+                {% endif %}
+                <a href="{{ url_for('tasks') }}" class="btn btn-secondary">返回列表</a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        {% if is_owner %}
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">任务操作</h5>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('edit_task', task_id=task.id) }}">
+                    <div class="mb-3">
+                        <label for="status" class="form-label">状态</label>
+                        <select class="form-select" id="status" name="status" {% if task.status == 'pending' %}disabled{% endif %}>
+                            <option value="pending" {% if task.status == 'pending' %}selected{% endif %}>待开始</option>
+                            <option value="in_progress" {% if task.status == 'in_progress' %}selected{% endif %}>进行中</option>
+                            <option value="completed" {% if task.status == 'completed' %}selected{% endif %}>已完成</option>
+                        </select>
+                        {% if task.status == 'pending' %}
+                        <small class="text-muted">任务未开始，不能修改状态。</small>
+                        {% endif %}
+                    </div>
+                    <div class="mb-3">
+                        <label for="completion_rate" class="form-label">完成率 (%)</label>
+                        <input type="range" class="form-range" id="completion_rate" name="completion_rate" min="0" max="100" value="{{ task.completion_rate or 0 }}" {% if task.status != 'completed' %}disabled{% endif %}>
+                        <div class="d-flex justify-content-between">
+                            <span>0%</span>
+                            <span id="rate_display">{{ task.completion_rate or 0 }}%</span>
+                            <span>100%</span>
+                        </div>
+                        {% if task.status != 'completed' %}
+                        <small class="text-muted">只有已完成的任务才能设置完成率。</small>
+                        {% endif %}
+                    </div>
+                    {% if task.status != 'pending' %}
+                    <button type="submit" class="btn btn-outline-primary btn-sm">更新状态</button>
+                    {% endif %}
+                </form>
+                <hr>
+                <h6>提醒</h6>
+                <p class="small">如果设置了提醒，则任务开始前会发送通知和邮件提醒。</p>
+                <form method="POST" action="{{ url_for('test_reminder', task_id=task.id) }}" class="d-inline">
+                    <button type="submit" class="btn btn-outline-info btn-sm">测试提醒</button>
+                </form>
+                
+                <small id="testEmailStatus" class="ms-2"></small>
+            </div>
+        </div>
+        {% endif %}
+        {% if is_owner %}
+        <div class="card mt-3">
+            <div class="card-header">
+                <h5 class="mb-0">相关统计</h5>
+            </div>
+            <div class="card-body">
+                <p class="small">该任务属于您总任务中的第 {{ task_index }} 个。</p>
+                <p class="small">相似任务：{{ similar_count }} 个。</p>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    const rateSlider = document.getElementById('completion_rate');
+    const rateDisplay = document.getElementById('rate_display');
+    rateSlider.addEventListener('input', function() {
+        rateDisplay.textContent = this.value + '%';
+    });
+
+    // 发送测试邮件
+    document.getElementById('sendTestEmailBtn').addEventListener('click', function() {
+        const btn = this;
+        const statusEl = document.getElementById('testEmailStatus');
+        btn.disabled = true;
+        statusEl.textContent = '';
+        btn.textContent = '发送中...';
+        fetch('{{ url_for("send_test_email") }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({})
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('测试邮件发送成功：' + data.message);
+                statusEl.textContent = '发送成功';
+                statusEl.className = 'ms-2 text-success';
+            } else {
+                alert('发送失败：' + data.message);
+                statusEl.textContent = '发送失败：' + data.message;
+                statusEl.className = 'ms-2 text-danger';
+            }
+            btn.disabled = false;
+            btn.textContent = '发送测试邮件';
+        })
+        .catch(error => {
+            alert('请求失败，请检查网络');
+            statusEl.textContent = '网络错误';
+            statusEl.className = 'ms-2 text-danger';
+            btn.disabled = false;
+            btn.textContent = '发送测试邮件';
+        });
+    });
+</script>
+{% endblock %}

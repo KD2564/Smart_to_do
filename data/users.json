@@ -1,0 +1,41 @@
+{
+    "1": {
+        "id": 1,
+        "username": "1",
+        "password": "scrypt:32768:8:1$d9xctHsgwAthDGdL$ce4ff774eecfbcce437844ad1dc839355c6b6f283618308ee2230287ed0947e0a1a5aa05efd826bdbe20415bcbc58688711a83f43365c88ff15eba88b18a8585",
+        "email": "1@1.c",
+        "verified": true,
+        "nickname": "1",
+        "bio": "",
+        "avatar": "https://q.qlogo.cn/g?b=qq&nk=2564903770&s=100",
+        "created_at": "2025-12-23T01:17:20.501765",
+        "followers": [
+            2
+        ],
+        "following": [
+            2
+        ],
+        "email_verification_code": "",
+        "email_verification_sent_at": "",
+        "email_verification_attempts": 0,
+        "test_email_sent_count": 3,
+        "test_email_last_date": "2025-12-27"
+    },
+    "2": {
+        "id": 2,
+        "username": "2",
+        "password": "scrypt:32768:8:1$tIDeTLmL0gtHmQaD$aff8d6de0faa77ae35bf50521ca6106724c12aca3190391fbc448bb5cf75421c6c8cb2a779663351a4384c7a7ac3ed23d3c5946288d184691d5ccfe86d4ebfe3",
+        "email": "2@2.c",
+        "verified": false,
+        "nickname": "2",
+        "bio": "",
+        "avatar": "",
+        "created_at": "2025-12-26T16:25:42.930670",
+        "followers": [
+            1
+        ],
+        "following": [
+            1
+        ]
+    }
+}

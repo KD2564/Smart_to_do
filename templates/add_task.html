@@ -1,0 +1,209 @@
+{% extends "layout.html" %}
+
+{% block title %}添加任务 - Smart To-Do{% endblock %}
+
+{% block extra_css %}
+<style>
+    .form-label.required::after {
+        content: " *";
+        color: red;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<h1 class="mb-4"><i class="bi bi-plus-circle"></i> 添加新任务</h1>
+
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-robot"></i> AI 智能解析</h5>
+    </div>
+    <div class="card-body">
+        <p class="text-muted small">输入自然语言描述，AI将自动提取任务信息并填充表单。</p>
+        <div class="input-group">
+            <textarea class="form-control" id="ai_text" placeholder="例如：明天下午3点开会，地点在会议室，预计需要60分钟，记得带材料。" rows="2"></textarea>
+            <button class="btn btn-outline-primary" type="button" id="ai_parse_btn">AI解析</button>
+        </div>
+        <div id="ai_loading" class="mt-2" style="display: none;">
+            <div class="spinner-border spinner-border-sm text-primary" role="status">
+                <span class="visually-hidden">解析中...</span>
+            </div>
+            <span class="ms-2 text-muted">AI解析中，请稍候...</span>
+        </div>
+        <div id="ai_error" class="alert alert-danger mt-2" style="display: none;"></div>
+    </div>
+</div>
+
+<form method="POST" action="{{ url_for('add_task') }}">
+    <div class="row">
+        <div class="col-md-6 mb-3">
+            <label for="name" class="form-label required">任务名称</label>
+            <input type="text" class="form-control" id="name" name="name" required>
+        </div>
+        <div class="col-md-6 mb-3">
+            <label for="start_time" class="form-label">开始时间</label>
+            <input type="datetime-local" class="form-control" id="start_time" name="start_time">
+        </div>
+    </div>
+    <div class="mb-3">
+        <label for="description" class="form-label">任务描述</label>
+        <textarea class="form-control" id="description" name="description" rows="3"></textarea>
+    </div>
+    <div class="row">
+        <div class="col-md-6 mb-3">
+            <label for="location" class="form-label">地点</label>
+            <input type="text" class="form-control" id="location" name="location">
+        </div>
+        <div class="col-md-6 mb-3">
+            <label for="duration" class="form-label">预计用时 (分钟)</label>
+            <input type="number" class="form-control" id="duration" name="duration" min="1">
+        </div>
+    </div>
+    <div class="mb-3">
+        <label for="notes" class="form-label">备注</label>
+        <textarea class="form-control" id="notes" name="notes" rows="2"></textarea>
+    </div>
+    <div class="mb-3 form-check">
+        <input type="checkbox" class="form-check-input" id="show_on_homepage" name="show_on_homepage">
+        <label class="form-check-label" for="show_on_homepage">展示到主页（其他用户可查看）</label>
+    </div>
+    <div class="mb-3">
+        <label for="custom_reminder_times" class="form-label">提醒时间（任务开始前多少分钟，逗号分隔，留空表示不提醒）</label>
+        <input type="text" class="form-control" id="custom_reminder_times" name="custom_reminder_times" placeholder="例如：10,30,60">
+        <small class="text-muted">请输入以逗号分隔的分钟数，系统将在任务开始前通过邮件提醒您。如果不输入任何内容，则不会发送提醒。</small>
+    </div>
+    <div class="d-flex justify-content-between">
+        <a href="{{ url_for('tasks') }}" class="btn btn-secondary">取消</a>
+        <button type="submit" class="btn btn-primary">添加任务</button>
+    </div>
+</form>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+const aiText = document.getElementById('ai_text');
+const aiParseBtn = document.getElementById('ai_parse_btn');
+const aiLoading = document.getElementById('ai_loading');
+const aiError = document.getElementById('ai_error');
+const formFields = {
+    name: document.getElementById('name'),
+    description: document.getElementById('description'),
+    start_time: document.getElementById('start_time'),
+    location: document.getElementById('location'),
+    duration: document.getElementById('duration'),
+    notes: document.getElementById('notes')
+};
+const form = document.querySelector('form');
+
+// 将ISO时间字符串转换为datetime-local输入框所需的格式（YYYY-MM-DDTHH:mm）
+function convertToDatetimeLocal(isoString) {
+    if (!isoString) return '';
+    // 去除时区信息，仅保留日期时间部分
+    let datetime = isoString.replace('Z', '').split('+')[0].split('.')[0];
+    // 如果字符串包含秒，则去除秒部分（datetime-local精度为分钟）
+    if (datetime.length > 16) {
+        datetime = datetime.substring(0, 16);
+    }
+    return datetime;
+}
+
+// 验证时间格式
+function isValidDatetimeLocal(value) {
+    if (!value) return true; // 空值视为有效
+    const regex = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/;
+    if (!regex.test(value)) return false;
+    const date = new Date(value);
+    return !isNaN(date.getTime());
+}
+
+aiParseBtn.addEventListener('click', function() {
+    const text = aiText.value.trim();
+    if (!text) {
+        showError('请输入任务描述');
+        return;
+    }
+    // 显示加载指示器
+    aiLoading.style.display = 'block';
+    aiError.style.display = 'none';
+
+    fetch('/tasks/ai_parse', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ text: text })
+    })
+    .then(response => {
+        if (!response.ok) {
+            return response.json().then(err => { throw new Error(err.error || '解析失败'); });
+        }
+        return response.json();
+    })
+    .then(data => {
+        // 填充表单字段
+        if (data.name) formFields.name.value = data.name;
+        if (data.description) formFields.description.value = data.description;
+        if (data.start_time) {
+            // 转换时间格式
+            const converted = convertToDatetimeLocal(data.start_time);
+            formFields.start_time.value = converted;
+            // 如果转换失败，显示警告
+            if (!converted) {
+                showError('AI解析出的时间格式无效，已忽略时间字段');
+            }
+        }
+        if (data.location) formFields.location.value = data.location;
+        if (data.duration) formFields.duration.value = data.duration;
+        if (data.notes) formFields.notes.value = data.notes;
+        // 隐藏加载指示器
+        aiLoading.style.display = 'none';
+        // 可选：滚动到表单顶部
+        formFields.name.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    })
+    .catch(error => {
+        aiLoading.style.display = 'none';
+        showError(error.message || 'AI解析失败，请检查网络或配置');
+    });
+});
+
+// 表单提交验证
+form.addEventListener('submit', function(event) {
+    const startTimeValue = formFields.start_time.value;
+    if (!isValidDatetimeLocal(startTimeValue)) {
+        event.preventDefault();
+        showError('开始时间格式无效，请使用正确的日期时间格式（例如：2025-12-27T15:00）');
+        formFields.start_time.focus();
+        return;
+    }
+    // 可以继续提交
+});
+
+// 提醒时间复选框互斥逻辑
+const reminderCheckboxes = document.querySelectorAll('input[name="reminder_times"]');
+const noneCheckbox = document.getElementById('reminder_none');
+const customInput = document.getElementById('custom_reminder_times');
+if (reminderCheckboxes.length) {
+    reminderCheckboxes.forEach(cb => {
+        cb.addEventListener('change', function() {
+            if (this === noneCheckbox && this.checked) {
+                // 如果选中“无提醒”，取消选中其他所有复选框
+                reminderCheckboxes.forEach(other => {
+                    if (other !== noneCheckbox) other.checked = false;
+                });
+                // 清空自定义提醒时间输入框
+                if (customInput) customInput.value = '';
+            } else if (this !== noneCheckbox && this.checked) {
+                // 如果选中其他提醒时间，取消选中“无提醒”
+                noneCheckbox.checked = false;
+            }
+        });
+    });
+}
+
+function showError(message) {
+    aiError.textContent = message;
+    aiError.style.display = 'block';
+}
+});
+</script>
+
+{% endblock %}
